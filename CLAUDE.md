@@ -41,6 +41,9 @@ docker compose exec api uv run -- pytest api/tests/test_api.py -k "test_name"
 ```bash
 # Run pre-commit hooks manually
 pre-commit run --all-files
+
+# Type check the growth app
+docker compose exec api uv run -- mypy
 ```
 
 ### API Types
@@ -56,6 +59,7 @@ docker compose exec web pnpm openapi:generate
   - `backend/api/` - Core API app (User model, auth endpoints)
   - `backend/settings_config/` - System settings (Stripe, Resend, TinyMCE, Cloudinary)
   - `backend/blog/` - Blog & Newsletter app
+  - `backend/growth/` - Growth Agent: tenants, social connections, publishing
 - `frontend/` - pnpm workspace containing:
   - `apps/web/` - Main Next.js application
   - `packages/types/` - OpenAPI-generated TypeScript types
@@ -224,3 +228,90 @@ Content management system for blog posts and newsletter campaigns.
 - SEO meta fields (title, description)
 - Post status workflow (draft → published → archived)
 - Newsletter subscriber management with status tracking
+
+## Growth Agent (growth app)
+
+Multi-tenant autonomous social media marketing. See `GROWTH_AGENT_SPEC.md` for
+the full product spec and phase plan. **Phase 1 (skeleton & connect flow) is
+complete**; phases 2-6 are not started.
+
+### Models (Phase 1)
+- **Business** - the tenant. Everything is scoped by `business_id`. Owns the
+  kill switches (`publishing_paused`, `replies_paused`), `review_buffer_hours`,
+  `monthly_budget_usd`, and an IANA `timezone` (validated).
+- **SocialConnection** - one Instagram Business/Creator account or Facebook Page
+  per business per platform. Status: `pending | healthy | needs_reauth | disconnected`.
+- **AuditLog** - append-only record of every autonomous action (`AuditLog.record()`).
+
+Models for strategy, posts, engagement, insights and usage arrive in their own
+phases rather than up front.
+
+### Service layer (`growth/services/`)
+- `composio_client.py` - the only place that talks to the Composio SDK. Timeout
+  and HTTP retries are configured on the client; the wrapper adds the
+  "tool ran but reported failure" case. **`ToolExecutionResponse` is a TypedDict —
+  subscript it, never use attribute access.**
+- `connections.py` - OAuth initiation, status sync, disconnect.
+- `publishing.py` - Instagram two-step container→publish, Facebook photo post,
+  IG quota check, kill-switch enforcement.
+- `tools.py` - every Composio tool slug, in one place.
+
+### Composio setup
+Each business maps to Composio user id `business_{id}`. Instagram and Facebook
+are separate toolkits, so each needs its own auth config id in `.env.backend`:
+
+```
+COMPOSIO_API_KEY=                    # needs WRITE on connected_accounts + triggers
+COMPOSIO_INSTAGRAM_AUTH_CONFIG_ID=
+COMPOSIO_FACEBOOK_AUTH_CONFIG_ID=
+PUBLIC_API_URL=http://localhost:8000
+```
+
+`PUBLIC_API_URL` can stay `localhost` through Phase 4: the OAuth callback is a
+browser redirect, so it only has to resolve in the developer's own browser. A
+real tunnel (`cloudflared tunnel --url http://localhost:8000`) is needed from
+Phase 5, when Composio's servers POST webhooks to us. It also feeds
+`ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS`, so no separate host var exists.
+
+**Editing `.env.backend` requires `docker compose up -d --force-recreate api`.**
+`docker compose restart` reuses the baked-in environment and will not pick up
+changes.
+
+### Toolkit versions are pinned
+Composio rejects manual tool execution without an explicit toolkit version
+("latest" is not accepted). Versions are date stamps, set in `api/settings.py`
+and overridable per toolkit via `COMPOSIO_<TOOLKIT>_TOOLKIT_VERSION`. Pin
+deliberately: tool argument schemas change between versions, and
+`growth/services/tools.py` is written against the pinned ones.
+
+Swapping Composio's managed Meta app for our own reviewed app is a change of
+these ids only, never a code change.
+
+### Connect flow
+1. `POST /api/businesses/{id}/connect/` with `{"platform": "instagram"}` →
+   returns `redirect_url`; send the user there.
+2. Composio redirects back to `/api/connections/callback/?token=…`. The token is
+   a signed connection reference, because the callback is unauthenticated.
+3. `POST /api/connections/{id}/check/` re-reads status from Composio and fills in
+   the Instagram user id / Facebook Page id.
+
+Consent links (`https://connect.composio.dev/link/lk_...`) are short lived —
+re-POST to `connect/` to mint a fresh one rather than reusing an old link.
+
+Use `connected_accounts.link()`, never `initiate()`: the latter is retired for
+Composio-managed OAuth configs and returns a 400. Instagram's own account id is
+read with `INSTAGRAM_GET_USER_INFO` using `ig_user_id="me"`, since we cannot
+pass an id we do not yet know.
+
+Instagram must be a Business/Creator account linked to a Facebook Page.
+
+### Commands
+```bash
+# Publish one real post end-to-end (the Phase 1 smoke test)
+docker compose exec api uv run -- python manage.py publish_test_post \
+    --business 1 --platform instagram [--sync] [--dry-run]
+
+# Confirm tool slugs and argument names against the live Composio project
+docker compose exec api uv run -- python manage.py composio_tools --toolkit instagram
+docker compose exec api uv run -- python manage.py composio_tools INSTAGRAM_POST_IG_USER_MEDIA
+```

@@ -13,7 +13,6 @@ dependencies = [
     "cloudinary>=1.44.1",
     "pillow>=11.0.0",
     "sentry-sdk[django]>=2.0.0",
-    "composio>=0.18.1",
 ]
 
 [dependency-groups]
@@ -21,9 +20,6 @@ dev = [
     "pytest>=8.3.4",
     "pytest-django>=4.9.0",
     "pytest-factoryboy>=2.7.0",
-    "mypy>=1.14",
-    "django-stubs[compatible-mypy]>=5.1",
-    "djangorestframework-stubs>=3.15",
 ]
 
 [tool.ruff]
@@ -49,12 +45,3 @@ ignore = [
 [tool.pytest.ini_options]
 filterwarnings = "ignore"
 addopts = "--strict-config --strict-markers --ds=api.settings"
-
-[tool.mypy]
-python_version = "3.13"
-files = ["growth"]
-plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
-ignore_missing_imports = true
-
-[tool.django-stubs]
-django_settings_module = "api.settings"

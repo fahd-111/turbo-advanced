@@ -1,6 +1,5 @@
 from os import environ
 from pathlib import Path
-from urllib.parse import urlparse
 
 import sentry_sdk
 from django.core.management.utils import get_random_secret_key
@@ -19,32 +18,6 @@ if SENTRY_DSN:
     )
 
 ######################################################################
-# Composio
-######################################################################
-COMPOSIO_API_KEY = environ.get("COMPOSIO_API_KEY", "")
-COMPOSIO_WEBHOOK_SECRET = environ.get("COMPOSIO_WEBHOOK_SECRET", "")
-COMPOSIO_TIMEOUT_SECONDS = int(environ.get("COMPOSIO_TIMEOUT_SECONDS", "30"))
-COMPOSIO_MAX_RETRIES = int(environ.get("COMPOSIO_MAX_RETRIES", "2"))
-
-# One auth config per toolkit. Swapping Composio's managed Meta app for our own
-# reviewed Meta app is a change of these ids only, never a code change.
-COMPOSIO_AUTH_CONFIG_IDS = {
-    "instagram": environ.get("COMPOSIO_INSTAGRAM_AUTH_CONFIG_ID", ""),
-    "facebook": environ.get("COMPOSIO_FACEBOOK_AUTH_CONFIG_ID", ""),
-}
-
-# Composio requires an explicit toolkit version for manual tool execution
-# ("latest" is rejected). Pin them: tool argument schemas change between
-# versions, and growth/services/tools.py is written against these.
-COMPOSIO_TOOLKIT_VERSIONS = {
-    "instagram": environ.get("COMPOSIO_INSTAGRAM_TOOLKIT_VERSION", "20260730_00"),
-    "facebook": environ.get("COMPOSIO_FACEBOOK_TOOLKIT_VERSION", "20260721_00"),
-}
-
-# Where Composio sends the user back after the OAuth consent screen.
-PUBLIC_API_URL = environ.get("PUBLIC_API_URL", "http://localhost:8000")
-
-######################################################################
 # General
 ######################################################################
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -53,16 +26,7 @@ SECRET_KEY = environ.get("SECRET_KEY", get_random_secret_key())
 
 DEBUG = environ.get("DEBUG", "") == "1"
 
-# PUBLIC_API_URL is by definition the host the outside world reaches us on, so
-# it doubles as the allowed host / trusted origin rather than needing its own
-# env var that can drift out of sync when the dev tunnel URL changes.
-_public_host = urlparse(PUBLIC_API_URL).hostname
-
 ALLOWED_HOSTS = ["localhost", "api"]
-if _public_host and _public_host not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(_public_host)
-
-CSRF_TRUSTED_ORIGINS = [PUBLIC_API_URL] if _public_host else []
 
 WSGI_APPLICATION = "api.wsgi.application"
 
@@ -87,7 +51,6 @@ INSTALLED_APPS = [
     "api",
     "settings_config",
     "blog",
-    "growth",
 ]
 
 ######################################################################
@@ -214,29 +177,6 @@ UNFOLD = {
                         "title": _("Groups"),
                         "icon": "label",
                         "link": reverse_lazy("admin:auth_group_changelist"),
-                    },
-                ],
-            },
-            {
-                "title": _("Growth Agent"),
-                "separator": True,
-                "items": [
-                    {
-                        "title": _("Businesses"),
-                        "icon": "storefront",
-                        "link": reverse_lazy("admin:growth_business_changelist"),
-                    },
-                    {
-                        "title": _("Social Connections"),
-                        "icon": "link",
-                        "link": reverse_lazy(
-                            "admin:growth_socialconnection_changelist"
-                        ),
-                    },
-                    {
-                        "title": _("Audit Log"),
-                        "icon": "history",
-                        "link": reverse_lazy("admin:growth_auditlog_changelist"),
                     },
                 ],
             },

@@ -1,29 +1,4 @@
-# Growth Agent <!-- omit from toc -->
-
-Autonomous social media marketing SaaS: businesses connect their Instagram
-Business account and Facebook Page, and an AI agent builds a content strategy,
-generates and schedules posts, and replies to comments and DMs in their brand
-voice.
-
-**Start here:**
-
-| Document | What it is for |
-|---|---|
-| [HANDOFF.md](HANDOFF.md) | Current state, how to get running, what is next |
-| [GROWTH_AGENT_SPEC.md](GROWTH_AGENT_SPEC.md) | Product spec and the 6-phase build plan |
-| [DECISIONS.md](DECISIONS.md) | Architecture decisions and why they were made |
-| [CLAUDE.md](CLAUDE.md) | Commands, Composio setup, operational gotchas |
-
-Status: **Phase 1 complete** — tenancy, Composio OAuth connect for Instagram and
-Facebook, connection health, and verified end-to-end publishing.
-
----
-
-## The underlying boilerplate <!-- omit from toc -->
-
-The rest of this file documents Turbo, the Django + Next.js template this
-project is built on. It remains accurate for the shared infrastructure
-(auth, monorepo layout, API type generation, Docker setup).
+# Turbo - Django & Next.js boilerplate <!-- omit from toc -->
 
 Turbo is a simple bootstrap template for Django and Next.js, combining both frameworks under one monorepository, including best practices.
 

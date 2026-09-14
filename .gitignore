@@ -5,6 +5,7 @@ node_modules
 requirements.txt
 TODO.md
 .env.backend
+.env
 .env.frontend
 data
 .pnp

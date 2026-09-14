@@ -102,6 +102,7 @@ services:
       dockerfile: Dockerfile.prod
       args:
         - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
+        - NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:?Set a persistent Server Actions key in .env}
     image: web:${VERSION:-latest}
     restart: unless-stopped
     ports:
@@ -110,6 +111,7 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+      - NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:?Set a persistent Server Actions key in .env}
       - API_URL=http://api:4000
     depends_on:
       api:
@@ -139,7 +141,7 @@ services:
       context: backend
       dockerfile: Dockerfile.prod
     image: api:${VERSION:-latest}
-    command: [ "celery", "-A", "api", "worker", "--loglevel=info", "--concurrency=4" ]
+    command: [ "celery", "-A", "api.celery", "worker", "--loglevel=info", "--concurrency=4" ]
     restart: unless-stopped
     env_file:
       - .env
@@ -158,6 +160,12 @@ services:
         condition: service_healthy
       api:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A api.celery inspect ping --destination celery@$$HOSTNAME --timeout 5 | grep -q pong"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
     deploy:
       resources:
         limits:
@@ -176,7 +184,7 @@ services:
       context: backend
       dockerfile: Dockerfile.prod
     image: api:${VERSION:-latest}
-    command: [ "celery", "-A", "api", "beat", "--loglevel=info" ]
+    command: [ "celery", "-A", "api.celery", "beat", "--loglevel=info" ]
     restart: unless-stopped
     env_file:
       - .env
@@ -195,6 +203,12 @@ services:
         condition: service_healthy
       api:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "from pathlib import Path; import time; assert time.time() - Path('/tmp/celery-beat-health').stat().st_mtime < 30"]
+      interval: 15s
+      timeout: 5s
+      start_period: 40s
+      retries: 3
     deploy:
       resources:
         limits:
@@ -228,13 +242,14 @@ services:
       - app-internal
 
   glitchtip-web:
-    image: glitchtip/glitchtip:latest
+    image: glitchtip/glitchtip:6.2.6
+    command: ["sh", "-c", "./bin/run-migrate.sh && exec ./bin/start.sh"]
     restart: unless-stopped
     ports:
       - "127.0.0.1:8001:8000"
     environment:
       DATABASE_URL: postgres://glitchtip:${GLITCHTIP_DB_PASSWORD}@glitchtip-db:5432/glitchtip
-      REDIS_URL: redis://redis:6379/1
+      VALKEY_URL: redis://redis:6379/1
       SECRET_KEY: ${GLITCHTIP_SECRET_KEY}
       PORT: 8000
       EMAIL_URL: ${GLITCHTIP_EMAIL_URL:-consolemail://}
@@ -247,11 +262,11 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/" ]
+      test: ["CMD", "python", "healthcheck.py"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 120s
     deploy:
       resources:
         limits:
@@ -264,21 +279,30 @@ services:
       - app-external
 
   glitchtip-worker:
-    image: glitchtip/glitchtip:latest
+    image: glitchtip/glitchtip:6.2.6
     restart: unless-stopped
-    command: ./bin/run-celery-with-beat.sh
+    command: ["python", "manage.py", "runworker", "--scheduler", "--health-check-file", "/tmp/worker-health"]
     environment:
+      IS_WORKER: "true"
       DATABASE_URL: postgres://glitchtip:${GLITCHTIP_DB_PASSWORD}@glitchtip-db:5432/glitchtip
-      REDIS_URL: redis://redis:6379/1
+      VALKEY_URL: redis://redis:6379/1
       SECRET_KEY: ${GLITCHTIP_SECRET_KEY}
       EMAIL_URL: ${GLITCHTIP_EMAIL_URL:-consolemail://}
       GLITCHTIP_DOMAIN: ${GLITCHTIP_DOMAIN}
       DEFAULT_FROM_EMAIL: ${GLITCHTIP_FROM_EMAIL:-noreply@localhost}
     depends_on:
+      glitchtip-web:
+        condition: service_healthy
       glitchtip-db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "from pathlib import Path; import time; assert time.time() - Path('/tmp/worker-health').stat().st_mtime < 60"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
     deploy:
       resources:
         limits:

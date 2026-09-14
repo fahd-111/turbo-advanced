@@ -26,7 +26,7 @@ SECRET_KEY = environ.get("SECRET_KEY", get_random_secret_key())
 
 DEBUG = environ.get("DEBUG", "") == "1"
 
-ALLOWED_HOSTS = ["localhost", "api"]
+ALLOWED_HOSTS = environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,api").split(",")
 
 WSGI_APPLICATION = "api.wsgi.application"
 
@@ -57,6 +57,7 @@ INSTALLED_APPS = [
 ######################################################################
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -95,6 +96,7 @@ DATABASES = {
         "NAME": environ.get("DATABASE_NAME", "db"),
         "HOST": environ.get("DATABASE_HOST", "db"),
         "PORT": "5432",
+        "OPTIONS": {"connect_timeout": 3},
         "TEST": {
             "NAME": "test",
         },
@@ -142,6 +144,14 @@ USE_TZ = True
 # Staticfiles
 ######################################################################
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+REDIS_URL = environ.get("REDIS_URL", "")
+CELERY_BROKER_URL = REDIS_URL or "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BEAT_SCHEDULER = "api.scheduler:HealthCheckedScheduler"
+CELERY_BEAT_MAX_LOOP_INTERVAL = 5
 
 ######################################################################
 # Rest Framework

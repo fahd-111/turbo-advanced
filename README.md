@@ -72,6 +72,36 @@ After successful installation, it will be possible to access both front end (htt
 
 ## Included dependencies
 
+### Testing the production stack locally
+
+Create `.env` from `.env.example.production` and replace the placeholder secrets.
+For local testing, use `http://localhost:4000` for `NEXT_PUBLIC_BACKEND_URL`,
+`http://localhost:8001` for `GLITCHTIP_DOMAIN`, `consolemail://` for
+`GLITCHTIP_EMAIL_URL`, and leave `SENTRY_DSN` empty until a GlitchTip project exists.
+Stop the development stack first because both frontends use port 3000.
+
+```bash
+docker compose -p turbo-production -f docker-compose.prod.yaml up -d --build --wait --wait-timeout 180
+docker compose -p turbo-production -f docker-compose.prod.yaml ps
+docker compose -p turbo-production -f docker-compose.prod.yaml logs --tail 50
+```
+
+The nine services must report `healthy`. The API runs checks and migrations before
+serving requests; GlitchTip runs its migrations before web and worker startup.
+API readiness checks PostgreSQL and Redis. Celery workers answer targeted pings;
+Celery beat and GlitchTip workers must keep their heartbeat files fresh.
+Static-file collection must succeed during the API image build.
+
+Local URLs: frontend `http://localhost:3000`, API `http://localhost:4000/health/`,
+and GlitchTip `http://localhost:8001`. Production authentication uses secure cookies;
+test authenticated flows behind HTTPS. Set the real domains in `.env` before deployment.
+
+To stop this stack while keeping its database volumes:
+
+```bash
+docker compose -p turbo-production -f docker-compose.prod.yaml down
+```
+
 The general rule when it comes to dependencies is to have minimum of third party applications or plugins to avoid future problems updating the project and keep the maintenance of applications is minimal.
 
 ### Backend dependencies

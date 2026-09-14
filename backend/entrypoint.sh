@@ -1,8 +1,9 @@
 #!/bin/bash
 set -e
 
-echo "Running database migrations..."
-python manage.py migrate --noinput
-echo "Migrations complete."
+if [ "${1:-}" = "gunicorn" ]; then
+    python manage.py check
+    python manage.py migrate --noinput
+fi
 
 exec "$@"

@@ -20,14 +20,11 @@ COPY pyproject.toml uv.lock ./
 # Install dependencies
 RUN uv venv && uv sync --frozen --no-dev
 
-# Ensure production packages are installed
-RUN uv pip install "gunicorn>=21.2.0" "whitenoise>=6.8.0" "uvicorn>=0.30.0"
-
 # Copy application code
 COPY . .
 
-# Collect static files (if needed)
-RUN uv run -- python manage.py collectstatic --noinput || true
+# Fail the build if production static assets cannot be collected.
+RUN python manage.py collectstatic --noinput
 
 # Copy entrypoint script
 COPY entrypoint.sh /app/entrypoint.sh

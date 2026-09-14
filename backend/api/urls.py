@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.http import JsonResponse
 from django.urls import include, path
 from django.views.generic import RedirectView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -7,10 +6,7 @@ from rest_framework import routers
 
 from .api import UserViewSet
 from .auth_views import get_csrf_token, login_user, logout_user
-
-
-def health_check(request):
-    return JsonResponse({"status": "ok"})
+from .health import health_check
 
 
 router = routers.DefaultRouter()

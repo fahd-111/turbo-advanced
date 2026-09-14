@@ -38,6 +38,8 @@ docker compose exec api uv run -- pytest api/tests/test_api.py -k "test_name"
 ```
 
 ### Code Quality
+Before every commit, push, or PR, tell the user in one line: "Run `pre-commit run --all-files` first to verify API/web builds, health checks, migrations, backend tests, TypeScript, lint, formatting, and dependency security; fix any failures, rerun after automatic changes, and share the passing result before proceeding."
+
 ```bash
 # Run pre-commit hooks manually
 pre-commit run --all-files
@@ -241,4 +243,3 @@ Never implement from a raw "just build X" prompt. If asked to, run `/feature` fi
 - No new dependency, abstraction, config option or file without saying why in the plan.
 - Match the patterns already in the repo rather than introducing better ones.
 - Refactoring outside the task is a separate task.
-

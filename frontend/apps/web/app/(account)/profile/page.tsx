@@ -1,7 +1,7 @@
+import type { Metadata } from 'next'
 import { profileAction } from '@/actions/profile-action'
 import { ProfileForm } from '@/components/forms/profile-form'
 import { getApiClient } from '@/lib/api'
-import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Profile - Turbo'

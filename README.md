@@ -72,6 +72,43 @@ After successful installation, it will be possible to access both front end (htt
 
 ## Included dependencies
 
+### Local commit checks and CI
+
+Install Docker and start its daemon, then enable both Git hooks once per checkout:
+
+```bash
+uv tool install pre-commit
+pre-commit install
+```
+
+Every commit runs the existing file checks plus production API/web builds,
+container readiness, Django migration checks, backend tests, TypeScript checks,
+Ruff/Biome lint and formatting checks, and Python/JavaScript dependency audits.
+Commit messages must follow Conventional Commits, for example `fix: correct health check`.
+Full checks take several minutes and require network access for security advisories.
+Frontend checks include a Node test for registration/password validation,
+the production build, TypeScript, lint/format checks and HTTP readiness.
+
+Run all checks manually with `pre-commit run --all-files`, or just the Docker
+pipeline with `bash scripts/check.sh`. Checks use disposable databases without
+host ports or deployment secrets and clean their containers/volumes on exit.
+
+The runner prints a short PASS/FAIL summary and up to six diagnostic lines per
+check. Full output is saved in the temporary log directory printed at the end;
+`index.txt` maps check names to log files.
+Python advisories and high/critical JavaScript advisories block commits.
+Outdated Python/frontend packages and failed version lookups also block commits.
+The approved exceptions are Redis Python client 6.4.0 (Kombu requires `<6.5`)
+and frontend releases younger than 24 hours. The version report requires the
+newest eligible release; security audits still check every installed package.
+pnpm 12.4.1 and the 24-hour release policy are shared by local and Docker builds.
+Code/file counts report tracked source lines and files by extension, plus TSX
+files in component directories; generated clients and declarations are excluded.
+Version reports and counts appear in the GitHub job summary, with full logs
+available as the `check-logs` artifact. All required checks must pass.
+GitHub Actions runs the same checks on pushes and pull requests; configure its
+`checks` job as a required branch-protection check to enforce it before merging.
+
 ### Testing the production stack locally
 
 Create `.env` from `.env.example.production` and replace the placeholder secrets.

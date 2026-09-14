@@ -1,5 +1,5 @@
-import { getAuthenticationHeaders } from '@/lib/api'
 import type { NextRequest } from 'next/server'
+import { getAuthenticationHeaders } from '@/lib/api'
 
 async function proxyAuthentication(
   request: NextRequest,

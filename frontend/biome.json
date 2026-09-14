@@ -1,8 +1,16 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.13/schema.json",
   "files": {
-    "include": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"],
-    "ignore": [".next", "packages/types/api"]
+    "includes": [
+      "**/*.js",
+      "**/*.mjs",
+      "**/*.jsx",
+      "**/*.ts",
+      "**/*.tsx",
+      "!**/.next",
+      "!**/packages/types/api",
+      "!**/next-env.d.ts"
+    ]
   },
   "formatter": {
     "indentStyle": "space",
@@ -21,7 +29,5 @@
   "linter": {
     "enabled": true
   },
-  "organizeImports": {
-    "enabled": true
-  }
+  "assist": { "actions": { "source": { "organizeImports": "on" } } }
 }

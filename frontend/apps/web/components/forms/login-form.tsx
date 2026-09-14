@@ -1,7 +1,5 @@
 'use client'
 
-import { submitAuthentication } from '@/lib/auth-client'
-import { loginFormSchema } from '@/lib/validation'
 import { FormFooter } from '@frontend/ui/forms/form-footer'
 import { FormHeader } from '@frontend/ui/forms/form-header'
 import { SubmitField } from '@frontend/ui/forms/submit-field'
@@ -11,6 +9,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import type { z } from 'zod'
+import { submitAuthentication } from '@/lib/auth-client'
+import { loginFormSchema } from '@/lib/validation'
 
 type LoginFormSchema = z.infer<typeof loginFormSchema>
 

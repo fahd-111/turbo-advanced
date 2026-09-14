@@ -4,3 +4,5 @@ packages:
 allowBuilds:
   '@biomejs/biome': true
   sharp: true
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true

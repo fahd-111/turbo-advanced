@@ -1,10 +1,10 @@
 'use server'
 
+import { ApiError } from '@frontend/types/api'
+import type { z } from 'zod'
 import { getApiClient } from '@/lib/api'
 import { getCurrentUser } from '@/lib/auth'
 import type { deleteAccountFormSchema } from '@/lib/validation'
-import { ApiError } from '@frontend/types/api'
-import type { z } from 'zod'
 
 export type DeleteAccountFormSchema = z.infer<typeof deleteAccountFormSchema>
 

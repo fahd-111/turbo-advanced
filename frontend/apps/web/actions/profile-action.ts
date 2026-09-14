@@ -1,10 +1,10 @@
 'use server'
 
+import { ApiError, type UserCurrentError } from '@frontend/types/api'
+import type { z } from 'zod'
 import { getApiClient } from '@/lib/api'
 import { getCurrentUser } from '@/lib/auth'
 import type { profileFormSchema } from '@/lib/validation'
-import { ApiError, type UserCurrentError } from '@frontend/types/api'
-import type { z } from 'zod'
 
 export type ProfileFormSchema = z.infer<typeof profileFormSchema>
 

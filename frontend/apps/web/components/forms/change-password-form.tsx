@@ -1,9 +1,5 @@
 'use client'
 
-import type { changePasswordAction } from '@/actions/change-password-action'
-import { signOut } from '@/lib/auth-client'
-import { fieldApiError } from '@/lib/forms'
-import { changePasswordFormSchema } from '@/lib/validation'
 import { FormHeader } from '@frontend/ui/forms/form-header'
 import { SubmitField } from '@frontend/ui/forms/submit-field'
 import { TextField } from '@frontend/ui/forms/text-field'
@@ -13,6 +9,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import type { z } from 'zod'
+import type { changePasswordAction } from '@/actions/change-password-action'
+import { signOut } from '@/lib/auth-client'
+import { fieldApiError } from '@/lib/forms'
+import { changePasswordFormSchema } from '@/lib/validation'
 
 export type ChangePasswordFormSchema = z.infer<typeof changePasswordFormSchema>
 

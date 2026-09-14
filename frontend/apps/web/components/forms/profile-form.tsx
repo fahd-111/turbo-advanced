@@ -1,8 +1,5 @@
 'use client'
 
-import type { profileAction } from '@/actions/profile-action'
-import { fieldApiError } from '@/lib/forms'
-import { profileFormSchema } from '@/lib/validation'
 import type { UserCurrent } from '@frontend/types/api'
 import { FormHeader } from '@frontend/ui/forms/form-header'
 import { SubmitField } from '@frontend/ui/forms/submit-field'
@@ -12,6 +9,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import type { z } from 'zod'
+import type { profileAction } from '@/actions/profile-action'
+import { fieldApiError } from '@/lib/forms'
+import { profileFormSchema } from '@/lib/validation'
 
 export type ProfileFormSchema = z.infer<typeof profileFormSchema>
 

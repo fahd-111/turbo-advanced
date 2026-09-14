@@ -1,3 +1,5 @@
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -10,7 +12,7 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.2
+    rev: v0.16.7
     hooks:
       - id: ruff
         args:
@@ -26,5 +28,22 @@ repos:
     rev: v2.3.1
     hooks:
       - id: biome-check
+        entry: "bash -c 'cd frontend && biome check --write .'"
+        pass_filenames: false
         additional_dependencies:
-          - "@biomejs/biome@1.9.4"
+          - "@biomejs/biome@2.5.13"
+  - repo: local
+    hooks:
+      - id: check-runner-tests
+        name: Check runner tests
+        entry: python3 -m unittest discover -s scripts -p test_*.py
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: full-project-check
+        name: Builds, migrations, types, tests, lint, format and security
+        entry: bash scripts/check.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        require_serial: true

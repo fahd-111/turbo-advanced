@@ -1,8 +1,8 @@
 'use client'
 
-import { signOut } from '@/lib/auth-client'
 import Link from 'next/link'
 import { useState } from 'react'
+import { signOut } from '@/lib/auth-client'
 
 export function SignInLink() {
   return (

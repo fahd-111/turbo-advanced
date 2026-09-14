@@ -1,5 +1,5 @@
-import { getCurrentUser } from '@/lib/auth'
 import { twMerge } from 'tailwind-merge'
+import { getCurrentUser } from '@/lib/auth'
 
 export async function UserSession() {
   const user = await getCurrentUser()

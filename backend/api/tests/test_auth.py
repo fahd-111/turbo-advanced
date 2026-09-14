@@ -48,10 +48,15 @@ def test_session_login_csrf_and_logout(session_client):
     assert client.get(reverse("api-users-me")).json()["username"] == "session-user"
     assert client.patch(reverse("api-users-me"), {}).status_code == 403
     csrf = client.cookies["csrftoken"].value
-    assert client.patch(
-        reverse("api-users-me"), {"first_name": "Updated"},
-        content_type="application/json", HTTP_X_CSRFTOKEN=csrf,
-    ).status_code == 200
+    assert (
+        client.patch(
+            reverse("api-users-me"),
+            {"first_name": "Updated"},
+            content_type="application/json",
+            HTTP_X_CSRFTOKEN=csrf,
+        ).status_code
+        == 200
+    )
     assert client.post(reverse("auth-logout")).status_code == 403
     session_key = client.cookies["sessionid"].value
     assert client.post(reverse("auth-logout"), HTTP_X_CSRFTOKEN=csrf).status_code == 200
@@ -63,10 +68,15 @@ def test_session_login_csrf_and_logout(session_client):
 def test_login_rejects_untrusted_origin_and_inactive_user(session_client):
     client = session_client
     csrf = client.get(reverse("auth-csrf")).json()["csrfToken"]
-    assert client.post(
-        reverse("auth-login"), {"username": "session-user", "password": PASSWORD},
-        HTTP_X_CSRFTOKEN=csrf, HTTP_ORIGIN="https://untrusted.example",
-    ).status_code == 403
+    assert (
+        client.post(
+            reverse("auth-login"),
+            {"username": "session-user", "password": PASSWORD},
+            HTTP_X_CSRFTOKEN=csrf,
+            HTTP_ORIGIN="https://untrusted.example",
+        ).status_code
+        == 403
+    )
     get_user_model().objects.filter(username="session-user").update(is_active=False)
     assert login_client(client).status_code == 400
 
@@ -87,14 +97,23 @@ def test_password_change_and_account_deletion_revoke_login(session_client):
     new_password = "another-strong-password-42"
     response = client.post(
         reverse("api-users-change-password"),
-        {"password": PASSWORD, "password_new": new_password, "password_retype": new_password},
-        content_type="application/json", HTTP_X_CSRFTOKEN=client.cookies["csrftoken"].value,
+        {
+            "password": PASSWORD,
+            "password_new": new_password,
+            "password_retype": new_password,
+        },
+        content_type="application/json",
+        HTTP_X_CSRFTOKEN=client.cookies["csrftoken"].value,
     )
     assert response.status_code == 204
     assert client.get(reverse("api-users-me")).status_code == 403
     assert other_client.get(reverse("api-users-me")).status_code == 403
     assert login_client(client, password=new_password).status_code == 200
-    assert client.delete(
-        reverse("api-users-delete-account"), HTTP_X_CSRFTOKEN=client.cookies["csrftoken"].value,
-    ).status_code == 204
+    assert (
+        client.delete(
+            reverse("api-users-delete-account"),
+            HTTP_X_CSRFTOKEN=client.cookies["csrftoken"].value,
+        ).status_code
+        == 204
+    )
     assert client.get(reverse("api-users-me")).status_code == 403

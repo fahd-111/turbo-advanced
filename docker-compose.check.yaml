@@ -1,0 +1,53 @@
+# Disposable, port-free services for commit checks and CI. No application secrets.
+services:
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: checks
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: checks-only
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: [CMD, pg_isready, -U, postgres, -d, checks]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+  redis:
+    image: redis:7-bookworm
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+  api:
+    build:
+      context: backend
+      dockerfile: Dockerfile.prod
+    environment:
+      SECRET_KEY: disposable-checks-only
+      DATABASE_HOST: db
+      DATABASE_NAME: checks
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: checks-only
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  web:
+    build:
+      context: frontend
+      dockerfile: Dockerfile.prod
+    environment:
+      API_URL: http://api:4000
+    depends_on:
+      api:
+        condition: service_healthy
+  frontend-check:
+    profiles: [checks]
+    build:
+      context: frontend
+      dockerfile: Dockerfile.prod
+      target: builder

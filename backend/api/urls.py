@@ -8,7 +8,6 @@ from .api import UserViewSet
 from .auth_views import get_csrf_token, login_user, logout_user
 from .health import health_check
 
-
 router = routers.DefaultRouter()
 router.register("users", UserViewSet, basename="api-users")
 

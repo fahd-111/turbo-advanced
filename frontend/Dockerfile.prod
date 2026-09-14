@@ -4,9 +4,6 @@ FROM node:24-bookworm-slim AS deps
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm install -g pnpm
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libc6 \
-    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

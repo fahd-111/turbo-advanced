@@ -10,7 +10,7 @@ services:
   # DATABASE
   # ---------------------------------------------------------------------------
   db:
-    image: postgres:17-bookworm
+    image: postgres:18-bookworm
     restart: unless-stopped
     expose:
       - "5432"
@@ -223,7 +223,7 @@ services:
   # GLITCHTIP (Error Tracking, Performance & Uptime Monitoring)
   # ---------------------------------------------------------------------------
   glitchtip-db:
-    image: postgres:17-bookworm
+    image: postgres:18-bookworm
     restart: unless-stopped
     expose:
       - "5432"

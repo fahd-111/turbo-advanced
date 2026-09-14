@@ -1,11 +1,13 @@
 'use client'
 
 import type { changePasswordAction } from '@/actions/change-password-action'
+import { signOut } from '@/lib/auth-client'
 import { fieldApiError } from '@/lib/forms'
 import { changePasswordFormSchema } from '@/lib/validation'
 import { FormHeader } from '@frontend/ui/forms/form-header'
 import { SubmitField } from '@frontend/ui/forms/submit-field'
 import { TextField } from '@frontend/ui/forms/text-field'
+import { ErrorMessage } from '@frontend/ui/messages/error-message'
 import { SuccessMessage } from '@frontend/ui/messages/success-message'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
@@ -20,6 +22,7 @@ export function ChangePaswordForm({
   onSubmitHandler: typeof changePasswordAction
 }) {
   const [success, setSuccess] = useState<boolean>(false)
+  const [error, setSubmitError] = useState('')
 
   const { formState, handleSubmit, register, reset, setError } =
     useForm<ChangePasswordFormSchema>({
@@ -37,9 +40,12 @@ export function ChangePaswordForm({
         <SuccessMessage>Password has been successfully changed</SuccessMessage>
       )}
 
+      {error && <ErrorMessage>{error}</ErrorMessage>}
+
       <form
         method="post"
         onSubmit={handleSubmit(async (data) => {
+          setSubmitError('')
           const res = await onSubmitHandler(data)
 
           if (res !== true && typeof res !== 'boolean') {
@@ -47,9 +53,14 @@ export function ChangePaswordForm({
             fieldApiError('password', 'password', res, setError)
             fieldApiError('password_new', 'passwordNew', res, setError)
             fieldApiError('password_retype', 'passwordRetype', res, setError)
-          } else {
+          } else if (res === true) {
             reset()
             setSuccess(true)
+            await signOut().catch(() => window.location.assign('/login'))
+          } else {
+            setSubmitError(
+              'Unable to change password. Please sign in and try again.'
+            )
           }
         })}
       >

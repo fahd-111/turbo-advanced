@@ -102,8 +102,6 @@ services:
       dockerfile: Dockerfile.prod
       args:
         - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
-        - NEXTAUTH_URL=${NEXTAUTH_URL}
-        - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
     image: web:${VERSION:-latest}
     restart: unless-stopped
     ports:
@@ -113,8 +111,6 @@ services:
     environment:
       - NODE_ENV=production
       - API_URL=http://api:4000
-      - NEXTAUTH_URL=${NEXTAUTH_URL}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
     depends_on:
       api:
         condition: service_healthy

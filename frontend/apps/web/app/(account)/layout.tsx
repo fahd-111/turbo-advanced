@@ -1,5 +1,4 @@
-import { authOptions } from '@/lib/auth'
-import { getServerSession } from 'next-auth'
+import { getCurrentUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 
 export default async function AccountLayout({
@@ -7,10 +6,10 @@ export default async function AccountLayout({
 }: {
   children: React.ReactNode
 }) {
-  const session = await getServerSession(authOptions)
+  const user = await getCurrentUser()
 
-  if (session === null) {
-    return redirect('/')
+  if (user === null) {
+    return redirect('/login')
   }
 
   return (

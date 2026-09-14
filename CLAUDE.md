@@ -224,3 +224,21 @@ Content management system for blog posts and newsletter campaigns.
 - SEO meta fields (title, description)
 - Post status workflow (draft → published → archived)
 - Newsletter subscriber management with status tracking
+
+## How we work with Claude (read this first)
+Claude never decides what gets built or fixed. The engineer decides, Claude proposes and implements after approval. Three skills exist for this and they are the only way work starts:
+
+- `/bug` for anything broken. Diagnosis only, no code changes. Ends with a report the engineer approves.
+- `/feature` for anything new. Engineer explains the idea, Claude researches and returns a plan. Ends with a plan the engineer approves.
+- `/review` after implementation. Runs the full test suite, reviews the diff against our policy, then quizzes the engineer on the change.
+- `/commit` before committing. Runs lint and typecheck, drafts the message, the engineer runs the command.
+- `/deploy` to deploy to a client VPS. Claude guides step by step with copy-paste commands and never connects to the server itself.
+
+Never implement from a raw "just build X" prompt. If asked to, run `/feature` first. Never commit or push; the engineer does that by hand after `/review`. Never ssh, scp or rsync to any server; the engineer runs remote commands themselves.
+
+## Simplicity rules (see .claude/rules/simplicity.md for detail)
+- Smallest change that solves the stated problem. Nothing speculative.
+- No new dependency, abstraction, config option or file without saying why in the plan.
+- Match the patterns already in the repo rather than introducing better ones.
+- Refactoring outside the task is a separate task.
+

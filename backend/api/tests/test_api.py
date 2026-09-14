@@ -6,7 +6,7 @@ from rest_framework import status
 @pytest.mark.django_db
 def test_api_users_me_unauthorized(client):
     response = client.get(reverse("api-users-me"))
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 @pytest.mark.django_db

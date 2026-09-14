@@ -1,4 +1,4 @@
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, logout
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -92,10 +92,12 @@ class UserViewSet(
 
         self.request.user.set_password(serializer.data["password_new"])
         self.request.user.save()
+        logout(request)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(["delete"], url_path="delete-account", detail=False)
     def delete_account(self, request, *args, **kwargs):
         self.request.user.delete()
+        logout(request)
         return Response(status=status.HTTP_204_NO_CONTENT)

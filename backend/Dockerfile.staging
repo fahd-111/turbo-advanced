@@ -1,0 +1,51 @@
+FROM python:3.13-slim-bookworm
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV UV_PROJECT_ENVIRONMENT=/.venv
+ENV PATH="/.venv/bin:$PATH"
+ENV PYTHONPATH=/app
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+# Install UV
+RUN pip install uv
+
+# Copy dependency files first (for better layer caching)
+COPY pyproject.toml uv.lock ./
+
+# Install dependencies
+RUN uv venv && uv sync --frozen --no-dev
+
+# Ensure production packages are installed
+RUN uv pip install "gunicorn>=21.2.0" "whitenoise>=6.8.0" "uvicorn>=0.30.0"
+
+# Copy application code
+COPY . .
+
+# Collect static files (if needed)
+RUN uv run -- python manage.py collectstatic --noinput || true
+
+# Copy entrypoint script
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+  CMD curl -f http://localhost:4000/health/ || exit 1
+
+# Entrypoint to run migrations
+ENTRYPOINT ["/app/entrypoint.sh"]
+
+# Default command - can be overridden in docker-compose
+CMD ["gunicorn", "api.asgi:application", \
+  "--bind", "0.0.0.0:4000", \
+  "--workers", "4", \
+  "--worker-class", "uvicorn.workers.UvicornWorker", \
+  "--max-requests", "1000", \
+  "--max-requests-jitter", "50", \
+  "--access-logfile", "-", \
+  "--error-logfile", "-"]

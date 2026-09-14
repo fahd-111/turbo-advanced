@@ -1,4 +1,3 @@
-import { AuthProvider } from '@/providers/auth-provider'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { twMerge } from 'tailwind-merge'
@@ -22,11 +21,9 @@ export default function RootLayout({
           inter.className
         )}
       >
-        <AuthProvider>
-          <div className="px-6">
-            <div className="container mx-auto my-12 max-w-6xl">{children}</div>
-          </div>
-        </AuthProvider>
+        <div className="px-6">
+          <div className="container mx-auto my-12 max-w-6xl">{children}</div>
+        </div>
       </body>
     </html>
   )

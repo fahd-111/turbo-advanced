@@ -1,29 +1,34 @@
 'use client'
 
-import { signIn, signOut } from 'next-auth/react'
+import { signOut } from '@/lib/auth-client'
 import Link from 'next/link'
+import { useState } from 'react'
 
 export function SignInLink() {
   return (
-    <button
-      type="button"
-      onClick={() => signIn()}
-      className="cursor-pointer text-purple-600 underline"
-    >
+    <Link href="/login" className="cursor-pointer text-purple-600 underline">
       Login
-    </button>
+    </Link>
   )
 }
 
 export function SignOutLink() {
+  const [error, setError] = useState('')
   return (
-    <button
-      type="button"
-      onClick={() => signOut()}
-      className="cursor-pointer text-purple-600 underline"
-    >
-      Logout
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() =>
+          signOut().catch(() =>
+            setError('Unable to sign out. Please try again.')
+          )
+        }
+        className="cursor-pointer text-purple-600 underline"
+      >
+        Logout
+      </button>
+      {error && <span role="alert">{error}</span>}
+    </>
   )
 }
 

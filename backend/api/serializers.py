@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions, serializers
 
@@ -105,14 +104,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return self.fail("password_mismatch")
 
     def create(self, validated_data):
-        with transaction.atomic():
-            user = User.objects.create_user(**validated_data)
-
-            # By default newly registered accounts are inactive.
-            user.is_active = False
-            user.save(update_fields=["is_active"])
-
-        return user
+        return User.objects.create_user(**validated_data)
 
 
 class UserCreateErrorSerializer(serializers.Serializer):

@@ -7,13 +7,11 @@ import type { OpenAPIConfig } from './core/OpenAPI'
 import { FetchHttpRequest } from './core/FetchHttpRequest'
 
 import { SchemaService } from './services/SchemaService'
-import { TokenService } from './services/TokenService'
 
 type HttpRequestConstructor = new (config: OpenAPIConfig) => BaseHttpRequest
 
 export class Api {
   public readonly schema: SchemaService
-  public readonly token: TokenService
 
   public readonly request: BaseHttpRequest
 
@@ -34,6 +32,5 @@ export class Api {
     })
 
     this.schema = new SchemaService(this.request)
-    this.token = new TokenService(this.request)
   }
 }

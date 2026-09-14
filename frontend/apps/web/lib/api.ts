@@ -1,13 +1,22 @@
 import { ApiClient } from '@frontend/types/api'
-import type { Session } from 'next-auth'
+import { cookies } from 'next/headers'
 
-export async function getApiClient(session?: Session | null) {
+export async function getAuthenticationHeaders() {
+  const cookieStore = await cookies()
+  return {
+    Cookie: ['sessionid', 'csrftoken']
+      .map((name) => `${name}=${cookieStore.get(name)?.value ?? ''}`)
+      .join('; '),
+    'X-CSRFToken': cookieStore.get('csrftoken')?.value ?? ''
+  }
+}
+
+export async function getApiClient() {
   return new ApiClient({
     BASE: process.env.API_URL,
     HEADERS: {
-      ...(session && {
-        Authorization: `Bearer ${session.accessToken}`
-      })
+      ...(await getAuthenticationHeaders()),
+      Referer: `${process.env.API_URL}/`
     }
   })
 }

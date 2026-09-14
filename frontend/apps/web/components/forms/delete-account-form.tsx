@@ -4,30 +4,23 @@ import type {
   DeleteAccountFormSchema,
   deleteAccountAction
 } from '@/actions/delete-account-action'
+import { signOut } from '@/lib/auth-client'
 import { deleteAccountFormSchema } from '@/lib/validation'
 import { FormHeader } from '@frontend/ui/forms/form-header'
 import { SubmitField } from '@frontend/ui/forms/submit-field'
 import { TextField } from '@frontend/ui/forms/text-field'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { signOut, useSession } from 'next-auth/react'
-import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 
 export function DeleteAccountForm({
-  onSubmitHandler
-}: { onSubmitHandler: typeof deleteAccountAction }) {
-  const session = useSession()
-
-  const { formState, handleSubmit, register, reset, setValue } =
+  onSubmitHandler,
+  username
+}: { onSubmitHandler: typeof deleteAccountAction; username: string }) {
+  const { formState, handleSubmit, register, reset } =
     useForm<DeleteAccountFormSchema>({
-      resolver: zodResolver(deleteAccountFormSchema)
+      resolver: zodResolver(deleteAccountFormSchema),
+      defaultValues: { usernameCurrent: username }
     })
-
-  useEffect(() => {
-    if (session.data?.user.username) {
-      setValue('usernameCurrent', session.data?.user.username)
-    }
-  }, [setValue, session.data?.user.username])
 
   return (
     <>
@@ -43,7 +36,7 @@ export function DeleteAccountForm({
 
           if (res) {
             reset()
-            signOut()
+            await signOut().catch(() => window.location.assign('/login'))
           }
         })}
       >

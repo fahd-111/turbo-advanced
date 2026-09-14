@@ -6,7 +6,6 @@ dependencies = [
     "django>=5.1",
     "psycopg[binary]>=3.2",
     "djangorestframework>=3.15",
-    "djangorestframework-simplejwt>=5.3",
     "drf-spectacular>=0.28",
     "django-unfold>=0.43.0",
     "requests>=2.32.5",

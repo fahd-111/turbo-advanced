@@ -11,7 +11,6 @@ import { FormHeader } from '@frontend/ui/forms/form-header'
 import { SubmitField } from '@frontend/ui/forms/submit-field'
 import { TextField } from '@frontend/ui/forms/text-field'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { signIn } from 'next-auth/react'
 import { useForm } from 'react-hook-form'
 
 export function RegisterForm({
@@ -35,7 +34,7 @@ export function RegisterForm({
           const res = await onSubmitHandler(data)
 
           if (res === true) {
-            signIn()
+            window.location.assign('/login')
           } else if (typeof res !== 'boolean') {
             fieldApiError('username', 'username', res, setError)
             fieldApiError('password', 'password', res, setError)

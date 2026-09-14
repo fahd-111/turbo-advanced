@@ -9,9 +9,9 @@ Turbo is a simple bootstrap template for Django and Next.js, combining both fram
 - **Server actions**: handling form submissions in server part of Next project
 - **Tailwind CSS**: built-in support for all front end packages and sites
 - **Docker Compose**: start both front end and backend by running `docker compose up`
-- **Auth system**: incorporated user authentication based on JWT tokens
+- **Auth system**: Django session authentication shared by the API and web app
 - **Profile management**: update profile information from the front end
-- **Registrations**: creation of new user accounts (activation not included)
+- **Registrations**: new accounts can sign in immediately after signup
 - **Admin theme**: Unfold admin theme with user & group management
 - **Custom user model**: extended default Django user model
 - **Visual Studio Code**: project already constains VS Code containers and tasks
@@ -53,7 +53,7 @@ Before you can run `docker compose up`, you have to set up two files with enviro
 
 ```bash
 cp .env.backend.template .env.backend # set SECRET_KEY and DEBUG=1 for debug mode on
-cp .env.frontend.template .env.frontend # set NEXTAUTH_SECRET to a value "openssl rand -base64 32"
+cp .env.frontend.template .env.frontend
 ```
 
 For more advanced environment variables configuration for the front end, it is recommended to read official [Next.js documentation](https://nextjs.org/docs/pages/building-your-application/configuring/environment-variables) about environment variables where it is possible to configure specific variables for each microsite.
@@ -79,7 +79,6 @@ The general rule when it comes to dependencies is to have minimum of third party
 For dependency management in Django application we are using `uv`. When starting the project through the `docker compose` command, it is checked for new dependencies as well. In the case they are not installed, docker will install them before running development server.
 
 - **[djangorestframework](https://github.com/encode/django-rest-framework)** - REST API support
-- **[djangorestframework-simplejwt](https://github.com/jazzband/djangorestframework-simplejwt)** - JWT auth for REST API
 - **[drf-spectacular](https://github.com/tfranzel/drf-spectacular)** - OpenAPI schema generator
 - **[django-unfold](https://github.com/unfoldadmin/django-unfold)** - Admin theme for Django admin panel
 
@@ -93,7 +92,6 @@ docker compose exec api uv add djangorestframework
 
 For the frontend project, it is bit more complicated to maintain front end dependencies than in backend part. Dependencies, can be split into two parts. First part are general dependencies available for all projects under packages and apps folders. The second part are dependencies, which are project specific.
 
-- **[next-auth](https://github.com/nextauthjs/next-auth)** - Next.js authentication
 - **[react-hook-form](https://github.com/react-hook-form/react-hook-form)** - Handling of React forms
 - **[tailwind-merge](https://github.com/dcastil/tailwind-merge)** - Tailwind CSS class names helper
 - **[zod](https://github.com/colinhacks/zod)** - Schema validation
@@ -152,17 +150,26 @@ new_microsite:
 
 ## Authentication
 
-For the authentication, Turbo uses **django-simplejwt** and **next-auth** package to provide simple REST based JWT authentication. On the backend, there is no configuraton related to django-simplejwt so everything is set to default values.
+Django is the only authentication authority. Login uses Django's database sessions;
+the browser holds the Django `sessionid` HttpOnly cookie, with no separate web JWT.
 
-On the front end, next-auth is used to provide credentials authentication. The most important file on the front end related to authentication is `frontend/web/lib/auth.ts` which is containing whole business logic behind authentication.
+- `GET /api/auth/csrf` on the web obtains Django's CSRF token.
+- `POST /api/auth/login` and `/api/auth/logout` forward to Django through the web's same-origin proxy.
+- Server-rendered pages and server actions forward the Django session and CSRF cookies to the API.
+- Logout invalidates the server session. Password changes require signing in again; old sessions become invalid.
+- Registration creates active accounts that can sign in immediately.
 
 ### Configuring env variables
 
-Before starting using authentication, it is crucial to configure environment variable `NEXTAUTH_SECRET` in .env.frontend file. You can set the value to the output of the command below.
+Set `API_URL` on the web to the internal Django URL (`http://api:8000` locally,
+`http://api:4000` in staging/production). Set a stable Django `SECRET_KEY` and set
+`CSRF_TRUSTED_ORIGINS` on the backend to the web origin, including the scheme
+(e.g. `https://yourdomain.com`; comma-separated for multiple origins).
+The development default is `http://localhost:3000`. Django sets secure cookies
+when `DEBUG=0`, so staging and production require HTTPS.
 
-```bash
-openssl rand -base64 32
-```
+Existing NextAuth/JWT logins do not carry over; users must sign in again after deployment.
+Both web and API must be deployed together. No database schema change is required.
 
 ### User accounts on the backend
 
@@ -172,52 +179,24 @@ There are two ways how to create new user account in the backend. First option i
 docker compose exec api uv run -- python manage.py createsuperuser
 ```
 
-The second option how to create new user account is to register it on the front end. Turbo provides simple registration form. After account registration, it will be not possible to log in because account is inactive. Superuser needs to access Django admin and activate an account. This is a default behavior provided by Turbo, implementation of special way of account activation is currently out the scope of the project.
+The second option is to register through the frontend. New accounts are active by default and can sign in immediately. Administrators can still deactivate accounts through Django admin to prevent login.
 
 ### Authenticated paths on frontend
 
-To ensure path is only for authenticated users, it is possible to use `getServerSession` to check the status of user.
-
-This function accepts an argument with authentication options, which can be imported from `@/lib/auth` and contains credentials authentication business logic.
-
-```tsx
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
-
-const SomePageForAuthenticatedUsers = async () => {
-  const session = await getServerSession(authOptions);
-
-  if (session === null) {
-    return redirect("/");
-  }
-
-  return <>content</>;
-};
-```
-
-To require authenticated user account on multiple pages, similar business logic can be applied in `layouts.tsx`.
+Protected pages use `getCurrentUser()` from `frontend/apps/web/lib/auth.ts`, which
+asks Django's `/api/users/me/` endpoint to validate the session. The account layout
+redirects anonymous users to `/login`; account actions also check authentication.
+Django enforces authorization and CSRF protection on API mutations.
 
 ```tsx
+import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
-const AuthenticatedLayout = async ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
-  const session = await getServerSession(authOptions);
-
-  if (session === null) {
-    return redirect("/");
-  }
-
-  return <>{children}</>;
-};
-
-export default AuthenticatedLayout;
+export default async function PrivatePage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  return <p>Hello, {user.username}</p>;
+}
 ```
 
 ## API calls to backend
@@ -226,7 +205,7 @@ Currently Turbo implements Next.js server actions in folder `frontend/apps/web/a
 
 ### API Client
 
-The query between server action and Django backend is handled by using an API client generated by `openapi-typescript-codegen` package. In Turbo, there is a function `getApiClient` available in `frontend/apps/web/lib/api.ts` which already implements default options and authentication tokens.
+The query between server action and Django backend is handled by using an API client generated by `openapi-typescript-codegen` package. In Turbo, there is a function `getApiClient` available in `frontend/apps/web/lib/api.ts` which already implements default options and Django session cookies.
 
 ### Updating OpenAPI schema
 

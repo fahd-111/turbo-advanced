@@ -1,5 +1,6 @@
 'use client'
 
+import { submitAuthentication } from '@/lib/auth-client'
 import { loginFormSchema } from '@/lib/validation'
 import { FormFooter } from '@frontend/ui/forms/form-footer'
 import { FormHeader } from '@frontend/ui/forms/form-header'
@@ -7,26 +8,35 @@ import { SubmitField } from '@frontend/ui/forms/submit-field'
 import { TextField } from '@frontend/ui/forms/text-field'
 import { ErrorMessage } from '@frontend/ui/messages/error-message'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { signIn } from 'next-auth/react'
-import { useSearchParams } from 'next/navigation'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import type { z } from 'zod'
 
 type LoginFormSchema = z.infer<typeof loginFormSchema>
 
 export function LoginForm() {
-  const search = useSearchParams()
+  const [error, setError] = useState('')
 
   const { register, handleSubmit, formState } = useForm<LoginFormSchema>({
     resolver: zodResolver(loginFormSchema)
   })
 
-  const onSubmitHandler = handleSubmit((data) => {
-    signIn('credentials', {
-      username: data.username,
-      password: data.password,
-      callbackUrl: '/'
-    })
+  const onSubmitHandler = handleSubmit(async (data) => {
+    setError('')
+    try {
+      const response = await submitAuthentication('login', data)
+      if (!response.ok) {
+        setError(
+          response.status === 400
+            ? 'Invalid username or password.'
+            : 'Unable to sign in. Please try again.'
+        )
+        return
+      }
+      window.location.assign('/')
+    } catch {
+      setError('Unable to sign in. Please try again.')
+    }
   })
 
   return (
@@ -36,15 +46,9 @@ export function LoginForm() {
         description="Get an access to internal application"
       />
 
-      {search.has('error') && search.get('error') === 'CredentialsSignin' && (
-        <ErrorMessage>Provided account does not exists.</ErrorMessage>
-      )}
+      {error && <ErrorMessage>{error}</ErrorMessage>}
 
-      <form
-        method="post"
-        action="/api/auth/callback/credentials"
-        onSubmit={onSubmitHandler}
-      >
+      <form method="post" onSubmit={onSubmitHandler}>
         <TextField
           type="text"
           register={register('username')}
@@ -61,7 +65,7 @@ export function LoginForm() {
           placeholder="Enter your password"
         />
 
-        <SubmitField>Sign in</SubmitField>
+        <SubmitField isLoading={formState.isSubmitting}>Sign in</SubmitField>
       </form>
 
       <FormFooter

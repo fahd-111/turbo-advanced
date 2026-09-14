@@ -32,7 +32,7 @@ services:
   # REDIS
   # ---------------------------------------------------------------------------
   redis:
-    image: redis:7-bookworm
+    image: redis:8-bookworm
     restart: unless-stopped
     expose:
       - "6379"

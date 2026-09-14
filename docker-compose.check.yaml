@@ -14,7 +14,7 @@ services:
       timeout: 3s
       retries: 20
   redis:
-    image: redis:7-bookworm
+    image: redis:8-bookworm
     healthcheck:
       test: [CMD, redis-cli, ping]
       interval: 2s

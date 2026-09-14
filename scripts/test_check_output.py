@@ -8,6 +8,33 @@ from check_output import MAX_DIAGNOSTICS, summarize_output
 
 
 class CheckOutputTest(unittest.TestCase):
+    def test_security_group_runs_only_audits_and_preserves_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            docker = Path(directory) / "docker"
+            docker.write_text(
+                '#!/bin/sh\ncase "$*" in\n'
+                '*pip-audit*) echo "Found 2 vulnerabilities"; exit 1;;\n'
+                "*pytest*|*outdated*|*tsc*) exit 99;;\nesac\nexit 0\n"
+            )
+            docker.chmod(0o755)
+            result = subprocess.run(
+                ["bash", str(Path(__file__).with_name("check.sh")), "security"],
+                check=False,
+                env={
+                    **os.environ,
+                    "PATH": directory + os.pathsep + os.environ["PATH"],
+                    "TMPDIR": directory,
+                },
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("FAIL: Python dependency audit", result.stdout)
+            self.assertIn("PASS: frontend dependency audit", result.stdout)
+            self.assertNotIn("backend tests", result.stdout)
+            self.assertNotIn("outdated packages", result.stdout)
+
     def test_runner_preserves_failure_and_saves_full_logs(self):
         with tempfile.TemporaryDirectory() as directory:
             docker = Path(directory) / "docker"

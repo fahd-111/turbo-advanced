@@ -105,9 +105,13 @@ pnpm 12.4.1 and the 24-hour release policy are shared by local and Docker builds
 Code/file counts report tracked source lines and files by extension, plus TSX
 files in component directories; generated clients and declarations are excluded.
 Version reports and counts appear in the GitHub job summary, with full logs
-available as the `check-logs` artifact. All required checks must pass.
-GitHub Actions runs the same checks on pushes and pull requests; configure its
-`checks` job as a required branch-protection check to enforce it before merging.
+available as per-job `check-logs-*` artifacts. All required checks must pass.
+GitHub Actions runs on pull requests and pushes to `main`. After file checks,
+separate jobs run API/web builds, health checks, migrations, tests, lint,
+formatting, types, security audits, outdated-package checks, and code metrics.
+The final `ci-success` job requires every job to succeed; configure it as the
+required branch-protection check to enforce this before merging.
+Run an individual group locally with, for example, `bash scripts/check.sh security`.
 
 ### Testing the production stack locally
 

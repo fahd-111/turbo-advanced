@@ -1,7 +1,7 @@
 # Disposable, port-free services for commit checks and CI. No application secrets.
 services:
   db:
-    image: postgres:17-bookworm
+    image: postgres:18-bookworm
     environment:
       POSTGRES_DB: checks
       POSTGRES_USER: postgres

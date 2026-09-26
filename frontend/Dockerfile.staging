@@ -1,5 +1,5 @@
 # Multi-stage build for Next.js production
-FROM node:24-bookworm-slim AS deps
+FROM node:26-bookworm-slim AS deps
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -17,7 +17,7 @@ COPY packages/ui/package.json ./packages/ui/
 RUN pnpm install --frozen-lockfile
 
 # Builder stage
-FROM node:24-bookworm-slim AS builder
+FROM node:26-bookworm-slim AS builder
 
 RUN npm install -g pnpm@12.4.1
 
@@ -38,7 +38,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter web build
 
 # Production stage
-FROM node:24-bookworm-slim AS runner
+FROM node:26-bookworm-slim AS runner
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \

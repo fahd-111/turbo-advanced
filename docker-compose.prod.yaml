@@ -242,7 +242,7 @@ services:
       - app-internal
 
   glitchtip-web:
-    image: glitchtip/glitchtip:6.2.6
+    image: glitchtip/glitchtip:7.0.0
     command: ["sh", "-c", "./bin/run-migrate.sh && exec ./bin/start.sh"]
     restart: unless-stopped
     ports:
@@ -279,7 +279,7 @@ services:
       - app-external
 
   glitchtip-worker:
-    image: glitchtip/glitchtip:6.2.6
+    image: glitchtip/glitchtip:7.0.0
     restart: unless-stopped
     command: ["python", "manage.py", "runworker", "--scheduler", "--health-check-file", "/tmp/worker-health"]
     environment:
